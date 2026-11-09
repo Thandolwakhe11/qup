@@ -45,8 +45,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .poster-logo { font-weight: 800; font-size: 24px; }
 .poster h1 { margin: 0; font-size: 44px; line-height: 1.1; }
 .poster p { margin: 0; font-size: 18px; color: #dce8ff; }
-.poster-qr { background: #fff; border-radius: 24px; padding: 20px; }
-.poster-qr img { width: 260px; height: 260px; display: block; }
+.poster-qr { background: #fff; border-radius: 20px; padding: 14px; }
+.poster-qr img { width: 180px; height: 180px; display: block; }
 .poster-steps { display: flex; gap: 12px; width: 100%; }
 .poster-steps div { flex: 1; background: rgba(255, 255, 255, 0.14); border-radius: 16px; padding: 14px 8px; font-size: 14px; font-weight: 600; }
 .poster-steps b { display: block; font-size: 24px; }
