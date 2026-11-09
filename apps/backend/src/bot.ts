@@ -1,14 +1,13 @@
 import { supabase } from './supabase.js';
 import { languagePrompt, t, type Lang } from './messages.js';
+import { TZ, timeWindow } from './queue.js';
 
-const TZ = 'Africa/Johannesburg';
 const LANGS: Lang[] = ['en', 'zu', 'af'];
 const LANES = ['general', 'chronic', 'baby'] as const;
 const GREETINGS = ['HI', 'HELLO', 'HALLO', 'MENU', 'START', 'SAWUBONA', 'HELO'];
 
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
-const clock = (d: Date) =>
-  d.toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+
 
 async function getSession(phone: string) {
   const { data } = await supabase.from('sessions').select('*').eq('phone', phone).maybeSingle();
@@ -54,12 +53,6 @@ async function aheadOf(ticket: { clinic_id: string; ticket_date: string; joined_
     .in('status', ['waiting', 'alerted'])
     .lt('joined_at', ticket.joined_at);
   return count ?? 0;
-}
-
-function timeWindow(ahead: number, avgMinutes: number) {
-  const start = new Date(Date.now() + ahead * avgMinutes * 60_000);
-  const end = new Date(start.getTime() + 15 * 60_000);
-  return { from: clock(start), to: clock(end) };
 }
 
 async function createTicket(phone: string, clinicId: string, name: string, lang: Lang, lane: string) {
