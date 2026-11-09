@@ -29,7 +29,7 @@ export default function Poster({ clinicName, onBack }: { clinicName: string; onB
           <p>Scan to join the {clinicName || 'clinic'} queue on WhatsApp</p>
           <div className="poster-qr">{qr && <img src={qr} alt="QR code to join the queue on WhatsApp" />}</div>
           <div className="poster-steps">
-            <div><b>1</b>Scan the code</div>
+            <div><b>1</b>Scan, then press Send in WhatsApp</div>
             <div><b>2</b>Pick your language and reason</div>
             <div><b>3</b>Get your ticket and alerts</div>
           </div>
