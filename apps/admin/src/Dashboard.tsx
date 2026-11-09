@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from './supabase';
+import Poster from './Poster';
+
 
 type Ticket = {
   id: string;
@@ -26,6 +28,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [, setTick] = useState(0);
+  const [showPoster, setShowPoster] = useState(false);
 
   const load = useCallback(async () => {
     const { data: c, error: ce } = await supabase
@@ -134,12 +137,17 @@ export default function Dashboard() {
       ok(await supabase.from('tickets').update({ status: 'cancelled' }).eq('id', current.id));
     });
 
+  if (showPoster) {
+    return <Poster clinicName={clinic?.name ?? ''} onBack={() => setShowPoster(false)} />;
+  }
+
   return (
     <>
       <div className="header">
         <div className="brand">QUp<small>Clinic Admin</small></div>
         <div className="header-right">
           <span className="clinic-name">{clinic?.name ?? ''}</span>
+          <button onClick={() => setShowPoster(true)}>QR POSTER</button>
           <button onClick={() => supabase.auth.signOut()}>LOGOUT</button>
         </div>
       </div>
