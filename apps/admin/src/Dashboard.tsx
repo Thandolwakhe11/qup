@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import Poster from './Poster';
 
-
 type Ticket = {
   id: string;
   code: string;
@@ -12,7 +11,7 @@ type Ticket = {
   priority: boolean;
   joined_at: string;
 };
-type Clinic = { id: string; name: string; status: string };
+type Clinic = { id: string; code: string; name: string; status: string };
 
 const today = () =>
   new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' });
@@ -29,11 +28,14 @@ export default function Dashboard() {
   const [busy, setBusy] = useState(false);
   const [, setTick] = useState(0);
   const [showPoster, setShowPoster] = useState(false);
+  const [showWalkIn, setShowWalkIn] = useState(false);
+  const [walkName, setWalkName] = useState('');
+  const [walkLane, setWalkLane] = useState('general');
 
   const load = useCallback(async () => {
     const { data: c, error: ce } = await supabase
       .from('clinics')
-      .select('id, name, status')
+      .select('id, code, name, status')
       .maybeSingle();
     if (ce || !c) {
       setError(ce?.message ?? 'No clinic is linked to this account.');
@@ -78,7 +80,7 @@ export default function Dashboard() {
     };
   }, [clinicId, load]);
 
-  
+  // Re-render every 30s so "Waiting X min" stays current
   useEffect(() => {
     const i = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(i);
@@ -137,6 +139,44 @@ export default function Dashboard() {
       ok(await supabase.from('tickets').update({ status: 'cancelled' }).eq('id', current.id));
     });
 
+  const addWalkIn = () =>
+    run(async () => {
+      if (!clinic) return;
+      const name = walkName.trim() || 'Walk-in';
+
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { data: last } = await supabase
+          .from('tickets')
+          .select('seq')
+          .eq('clinic_id', clinic.id)
+          .eq('ticket_date', today())
+          .order('seq', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const seq = (last?.seq ?? 0) + 1;
+        const code = `${clinic.code}-${String(seq).padStart(3, '0')}`;
+
+        const { error } = await supabase.from('tickets').insert({
+          clinic_id: clinic.id,
+          ticket_date: today(),
+          seq,
+          code,
+          patient_name: name,
+          lane: walkLane,
+          language: 'en',
+        });
+
+        if (!error) {
+          setWalkName('');
+          setShowWalkIn(false);
+          return;
+        }
+        if (error.code !== '23505') throw new Error(error.message);
+      }
+      throw new Error('Could not create the ticket. Please try again.');
+    });
+
   if (showPoster) {
     return <Poster clinicName={clinic?.name ?? ''} onBack={() => setShowPoster(false)} />;
   }
@@ -178,7 +218,33 @@ export default function Dashboard() {
           <button className="cancel" onClick={cancelCurrent} disabled={busy || !current}>
             CANCEL<small>Cancel Current</small>
           </button>
+          <button className="walk" onClick={() => setShowWalkIn((s) => !s)}>
+            + WALK-IN<small>Patient without a phone</small>
+          </button>
         </div>
+
+        {showWalkIn && (
+          <div className="card">
+            <h2>Add walk-in</h2>
+            <p className="sub">For patients without a phone. Call them out loud, they get no WhatsApp alerts.</p>
+            <div className="walkin-row">
+              <input
+                placeholder="Name (optional)"
+                value={walkName}
+                maxLength={40}
+                onChange={(e) => setWalkName(e.target.value)}
+              />
+              <select value={walkLane} onChange={(e) => setWalkLane(e.target.value)}>
+                <option value="general">General</option>
+                <option value="chronic">Chronic</option>
+                <option value="baby">Baby</option>
+              </select>
+              <button className="walkin-add" onClick={addWalkIn} disabled={busy}>
+                ADD TO QUEUE
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="card">
           <h2>Patient Queue — {waiting.length} Waiting</h2>
