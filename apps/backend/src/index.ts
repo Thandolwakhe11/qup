@@ -5,10 +5,12 @@ import crypto from 'node:crypto';
 import twilio from 'twilio';
 import { handleMessage } from './bot.js';
 import { startNotifier } from './notifier.js';
+   import { mountSimulator } from './simulator.js';
 
 type RawBodyRequest = Request & { rawBody?: Buffer };
 
 const app = express();
+   app.set('trust proxy', 1);
 
 // Twilio sends form data
 app.use(express.urlencoded({ extended: false }));
@@ -76,6 +78,8 @@ app.post('/webhook', (req, res) => {
   res.sendStatus(200);
 });
 
+   mountSimulator(app);
+   
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => {
   console.log(`Qup backend running on http://localhost:${port}`);

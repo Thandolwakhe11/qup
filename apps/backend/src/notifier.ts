@@ -28,7 +28,12 @@ async function sendOnce(
     return false;
   }
 
-  
+    // Simulator users get their alerts stored for the chat page to pick up
+  if (ticket.phone.startsWith('sim-')) {
+    await supabase.from('sim_outbox').insert({ phone: ticket.phone, body });
+    return true;
+  }
+
   if (process.env.ALERT_MODE === 'log') {
     console.log(`[DRY RUN] "${type}" alert for ${ticket.phone}: ${body}`);
     return true;
